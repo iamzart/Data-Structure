@@ -1,0 +1,176 @@
+# 数据结构--顺序表的增删改查（动态）
+* 本文包括顺序表的初始化，尾插，头插，尾删，头删，查找任意元素，在指定位置删除元素，在指定位置之前插入元素等操作
+
+### 动态顺序表的结构
+
+一个顺序表由一个数组，size（记录数组有效长度），capacity（记录数组容量，能放多少元素）
+```cpp
+typedef int SLDataType;
+//这里的int是数组的类型，如果要改变数据类型，只需改动这里的int，因为只有用SLDataType表示的int才表示数据类型（数组里元素的类型）
+typedef struct SeqList
+{
+	SLDataType* arr;
+	int size;
+	int capacity;
+}SL;
+```
+这里的SL是结构体类型的别名
+
+### 初始化
+指针类型置为空，整形置为0
+
+```c
+void SLInit(SL* sl)
+//因为这里要对结构体做出改变，所以要传址，在主函数中写的是&sl
+{
+	sl->arr = NULL;
+	sl->size = sl->capacity = 0;
+}
+```
+### 检查并申请内存
+因为每次增加数据时（尾插头插等），都要检查数组的容量还够不够，如果不够需要扩容，所以这里把扩容单独封装成函数
+
+```c
+void SLCapacityCheck(SL* sl)
+{
+	//什么时候空间是满了呢，就是当有效个数和容量相等时，相当于数组元素把空间都占满了
+	if(sl->size == sl->capacity)
+	{
+		int newcapacity = capacity==0?4:capacity*2;
+		//一般扩容到原来容量的二倍
+		//因为第一次的capacity为0，所以怎么乘都是零，所以要在它等于0时先给它赋上非0的数
+		SLDataType* tmp = (SLDataType*)realloc(sl->arr,newcapacity*sizeof(SLDataType));
+		//别忘了realloc函数第二个参数的单位是字节
+		//因为是要给数组扩容，所以类型也是数组元素的数据类型
+		//判断是否扩容成功了,如果申请内存失败，就会返回空指针
+		if(tmp==NULL)
+		{
+			perror("realloc fail!");
+			exit(1);
+		}
+		sl->capacity = newcapacity;
+		sl->arr = tmp;
+		//把扩容的结果还给结构体成员
+	}
+}
+```
+
+### 尾插
+因为要插入一个数据，所以要检查结构体是否为空、数组内空间还够不够
+
+```c
+void SLPushBack(SL* ps, SLDataType x)
+{
+	assert(ps);
+	SLCapacityCheck(ps);
+	ps->arr[ps->size++] = x;//把要插入的数据放到数组的最后边，size一直在记录有效个数，所以此时插入了新数据也不要忘记给size更新
+}
+```
+
+### 头插
+思路是把所有的元素都向后移动一位，给即将在头位置登场的新元素腾位置
+
+```c
+void SLPushFront(SL* ps, SLDataType x)
+{
+	assert(ps);
+	SLCapacityCheck(ps);
+	for (int i = ps->size; i > 0; i--)
+	{
+		ps->arr[i] = ps->arr[i - 1];
+	}
+	ps->arr[0] = x;//把新元素放在首元素的位置
+	++ps->size;//更新size
+}
+```
+
+### 尾删
+直接让size--，不用担心以后这个数还会不会存在，再次插入的时候因为size--了，会以为这个尾删的位置没有数，再次插入时会把这个地方覆盖
+
+```c
+void SLPopBack(SL* ps)
+{
+	assert(ps && ps->size);//得确定他数组里还有元素呀
+	ps->size--;
+}
+```
+### 头删
+把数组所有元素都往前挪一位，把首元素覆盖
+
+```c
+void SLPopFront(SL*ps)
+{
+	assert(ps && ps->size);
+	for (int i = 0; i <ps->size-1; i++)
+	{
+		ps->arr[i] = ps->arr[i + 1];
+	}
+	ps->size--;//更新size
+}
+```
+
+### 查找任意元素
+找到了返回下标，找不到返回-1，可以用返回值是否小于0来判断是否找到了这个元素
+思路：遍历数组，如果发现了当前下标对应的元素与查找的元素相等，就返回当前的下标，如果都遍历完跳出循环了还没找到，就是没有
+
+```c
+int SLFind(SL* ps, SLDataType x)
+{
+	assert(ps);
+	for (int i = 0; i < ps->size; i++)
+	{
+		if (ps->arr[i] = x)//找到了
+			return i;
+	}
+	//如果轮到这里还没返回，就是未找到
+	return -1;
+}
+```
+
+### 在任意位置之前插入数据
+思路：从这个位置及以后的元素都向后移动，把这个位置腾出来放新数据
+
+```c
+void SLInsert(SL* ps, int pos, SLDataType x)
+{
+	assert(ps);
+	assert(pos >= 0 && pos <= ps->size);
+	//要插入的位置pos要满足在数组的下标范围内
+	SLCapacityCheck(ps);//在插入前都要检查内存够不够
+	for (int i = ps->size; i > pos; i--)
+	{
+		ps->arr[i] = ps->arr[i - 1];
+	}
+	ps->arr[pos] = x;
+	ps->size++;
+}
+```
+
+### 指定位置删除元素
+从这个位置的下一个开始都往前移动一位，把这个位置的数据覆盖掉
+
+```c
+void SLErase(SL* ps, int pos)
+{
+	assert(ps);
+	assert(ps->size);
+	assert(pos >= 0 && pos < ps->size);
+	for (int i = pos; i < ps->size - 1; i++)
+	{
+		ps->arr[i] = ps->arr[i + 1];
+	}
+	ps->size--;
+}
+```
+### 销毁
+```c
+void SLDestroy(SL* ps)
+{
+	if (ps->arr)//不是空指针的话
+	{
+		free(ps->arr);
+		ps->arr = NULL;
+		ps->capacity = ps->size = 0;
+	}
+}
+```
