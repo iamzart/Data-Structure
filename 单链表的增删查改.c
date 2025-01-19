@@ -26,7 +26,7 @@ void SLPrint(SL* pphead)
 		printf("%d->", pphead->data);
 		pphead = pphead->next;
 	}
-	printf("NULL");
+	printf("NULL\n");
 }
 //尾插
 void SLPushback(SL** pphead, SLDataType x)
@@ -69,9 +69,99 @@ void SLPopback(SL** pphead)
 	ptail->next = NULL;
 }
 //头删
+//先把头结点保存下来，让头结点指向下个，释放保存的结点
+void SLPopfront(SL** pphead)
+{
+	assert(pphead && *pphead);
+	SL* newphead = *pphead;
+	*pphead = (*pphead)->next;
+	free(newphead);
+	newphead = NULL;
+}
+//查找
+SL* SLFind(SL* phead, SLDataType x)
+{
+	//遍历链表
+	SL* pcur = phead;
+	while (pcur)
+	{
+		if (pcur->data == x)
+			return pcur;
+		else
+		pcur = pcur->next;
+	}
+	return NULL;
+}
+//在pos之后插入x
+void SLInsertafter(SL* pos,SLDataType x)
+{
+	assert(pos);
+	SL* newnode = SLBuynode(x);
+	newnode->next = pos->next;
+	pos->next = newnode;		
+}
+//在pos之前插入x
+//链表不能往回倒，所以要传头结点遍历找到pos的前驱
+//要对当前的结点解引用，所以要把只有一个的情况拎出来
+void SLInsertbefore(SL** pphead, SL* pos,SLDataType x)
+{
+	assert(pphead && pos);
+	SL* pcur = *pphead;
+	//pos九四头结点
+	if (*pphead == pos)
+	{
+		SLPushfront(pphead, x);
+	}
+	else
+	{
+		SL* newnode = SLBuynode(x);
+		while (pcur -> next!= pos)
+		{
 
+			pcur = pcur->next;
+		}//此时pcur是pos的前驱
+		newnode->next = pos;
+		pcur->next = newnode;
+	}
+}
+//删除pos结点
+//涉及前后，只要有前就用头结点
+void SLErase(SL** pphead, SL* pos)
+{
+	assert(pphead && *pphead && pos);
+	SL* prev = *pphead;
+	//删除头结点
+	if (prev == pos)
+	{
+		free(pos);
+		pos = NULL;
+	}
+	else
+	{
+		while (prev->next != pos)
+		{
+			prev = prev->next;
+		}
+		prev->next = pos->next;
+		free(pos);
+		pos = NULL;
 
+	}
+	
+}
 
+//删除pos之后的结点
+void Eraseafter(SL* pos)
+{
+	assert(pos&&pos->next);
+	{
+		SL* del = pos->next;
+		pos->next = pos->next->next;
+		free(del);
+		del = NULL;
+	}
+
+}
 int main()
 {
 	SL* plist = NULL;//创建一个空链表
@@ -84,5 +174,21 @@ int main()
 	SLPrint(plist);
 	SLPopback(&plist);
 	SLPrint(plist);
+	SLPopfront(&plist);
+	SLPrint(plist);
+	SL* findresult1 = SLFind(plist, 8);
+	SLPrint(findresult1);
+	SL* findresult2 = SLFind(plist, 9);
+	SLPrint(findresult2);
+	SLInsertafter(findresult2,101);
+	SLPrint(plist);
+	SLInsertbefore(&plist, findresult2, 202);
+	SLPrint(plist);
+	SLErase(&plist, findresult2);
+	SLPrint(plist);
+	Eraseafter(findresult2);
+	SLPrint(plist);
+
+
 	return 0;
 }
