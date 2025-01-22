@@ -1,0 +1,59 @@
+OR36 链表的回文结构
+/*
+struct ListNode {
+    int val;
+    struct ListNode *next;
+    ListNode(int x) : val(x), next(NULL) {}
+};*/
+//思路1：先反转再比较
+//思路2：投机取巧，定义一个数组，遍历链表过程中，一边用计数器记录数组元素，一边把链表的数据域存到数组中，在数字里left++，right--这样判断
+//思路3：找中间结点，把中间结点作为链表的新结点，反转中间结点带领的新链表，挨个比较
+class PalindromeList {
+public:
+ListNode* midnode(ListNode* head)
+{
+    ListNode* slow = head;
+        ListNode* fast = head;
+        while(fast&&fast->next)
+        {
+            slow = slow->next;
+            fast = fast->next->next;//慢一步快两步
+        }//跳出循环时，slow就是中间结点
+        return slow;
+}
+//反转链表返回mid为头的链表
+ListNode* reverse(ListNode* mid)
+{
+    if(mid == NULL)
+    return mid; 
+    ListNode* n1,*n2,*n3;
+    n1 = NULL; 
+    n2 = mid;
+    n3 = n2->next;
+    while(n2)
+    {
+        n2->next = n1;
+        n1 = n2;
+        n2 = n3;
+        if(n3)
+        n3 = n3->next;
+    }
+    return n1;
+}
+    bool chkPalindrome(ListNode* A) {
+        // write code here
+        
+        ListNode* mid = midnode(A);
+        ListNode* newhead = reverse(mid);
+        while(newhead)
+        {
+            if(A->val != newhead->val)
+            {
+                return false;
+            }
+            A = A->next; 
+            newhead = newhead->next;
+        }
+        return true;
+    }
+};
